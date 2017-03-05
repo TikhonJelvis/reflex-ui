@@ -37,9 +37,20 @@ empty = return ()
 -- elements:
 -- @
 -- img ["src" =: "./logo.png", "alt" =: "Our lovely logo."] empty
+--   -- <img src="./logo.png" alt = "Our lovely logo."></img>
 -- @
 (=:) :: Text -> Text -> Attr
 attr =: value = (attr, value)
+
+-- | Adds the "enabled" attribute and removes the "disabled" attribute
+-- (if present).
+enabled :: Attrs -> Attrs
+enabled = Map.insert "enabled" "" . Map.delete "disabled"
+
+-- | Adds the "disabled" attribute and removes the "enabled" attribute
+-- (if present).
+disabled :: Attrs -> Attrs
+disabled = Map.insert "disabled" "" . Map.delete "enabled"
 
 -- ** CSS Classes
 
