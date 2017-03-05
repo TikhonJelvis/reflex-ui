@@ -16,7 +16,7 @@ build-type:          Simple
 cabal-version:       >=1.10
 
 library
-  -- exposed-modules:     
+  exposed-modules:     Reflex.UI.Elements
   -- other-modules:       
   -- other-extensions:    
   build-depends:       base

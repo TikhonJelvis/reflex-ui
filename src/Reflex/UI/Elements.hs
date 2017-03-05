@@ -1,4 +1,5 @@
 {-# LANGUAGE OverloadedLists #-}
+{-# LANGUAGE TupleSections #-}
 
 -- | This module has functions defined for common HTML elements. In
 -- essence, you can replace @elAttr [] "div"@ with @div []@ which
@@ -6,8 +7,13 @@
 -- (ie "div" vs "dive").
 module Reflex.UI.Elements where
 
+import Control.Lens
+
+import Data.List (delete)
 import Data.Map (Map)
 import qualified Data.Map as Map
+import Data.Maybe (fromMaybe)
+import Data.Monoid ((<>))
 import Data.Text (Text)
 import qualified Data.Text as Text
 
@@ -25,15 +31,66 @@ type Attr = (Text, Text)
 empty :: Dom.DomBuilder t m => m ()
 empty = return ()
 
--- * Common Attributes
+-- * Attributes
 
-class' :: Text -> Attr
-class' = ("class",)
+-- | Build an attribute value pair. This lets you write neater-looking
+-- elements:
+-- @
+-- img ["src" =: "./logo.png", "alt" =: "Our lovely logo."] empty
+-- @
+(=:) :: Text -> Text -> Attr
+attr =: value = (attr, value)
 
-id' :: Text -> Attr
-id' = ("id",)
+-- ** CSS Classes
+
+-- | Returns the names of every class set in the "class" attribute of
+-- the given attributes.
+--
+-- If not class attribute is set, returns @[]@.
+classes :: Attrs -> [Text]
+classes attrs = fromMaybe [] (split <$> Map.lookup "class" attrs)
+  where split = Text.splitOn " "
+
+-- | Returns whether the given class is set in the given attribute
+-- set.
+hasClass :: Text -> Attrs -> Bool
+hasClass name attrs = name `elem` classes attrs
+
+-- | Adds the given class to these attributes if it isn't already set.
+addClass :: Text -> Attrs -> Attrs
+addClass name attrs
+  | hasClass name attrs = attrs
+  | otherwise           = attrs & at "class" . non "" %~ append name
+  where append name ""  = name
+        append name old = old <> " " <> name
+
+-- | Removes the given class from the set of attributes if it's
+-- present.
+removeClass :: Text -> Attrs -> Attrs
+removeClass name attrs = attrs & at "class" . _Just %~ remove
+  where remove = Text.intercalate " " . delete name . Text.splitOn " "
 
 -- * Elements
+
+-- ** Document Metadata
+
+base :: Dom.DomBuilder t m => Attrs -> m a -> m a
+base = Dom.elAttr "base"
+
+head :: Dom.DomBuilder t m => Attrs -> m a -> m a
+head = Dom.elAttr "head"
+
+link :: Dom.DomBuilder t m => Attrs -> m a -> m a
+link = Dom.elAttr "link"
+
+meta :: Dom.DomBuilder t m => Attrs -> m a -> m a
+meta = Dom.elAttr "meta"
+
+style :: Dom.DomBuilder t m => Attrs -> m a -> m a
+style = Dom.elAttr "style"
+
+title :: Dom.DomBuilder t m => Attrs -> m a -> m a
+title = Dom.elAttr "title"
 
 -- ** Content Sectioning
 
@@ -86,8 +143,8 @@ h6 = Dom.elAttr "h6"
 dd :: Dom.DomBuilder t m => Attrs -> m a -> m a
 dd = Dom.elAttr "dd"
 
-div :: Dom.DomBuilder t m => Attrs -> m a -> m a
-div = Dom.elAttr "div"
+div' :: Dom.DomBuilder t m => Attrs -> m a -> m a
+div' = Dom.elAttr "div"
 
 dl :: Dom.DomBuilder t m => Attrs -> m a -> m a
 dl = Dom.elAttr "dl"
@@ -359,4 +416,3 @@ menuitem = Dom.elAttr "menuitem"
 
 summary :: Dom.DomBuilder t m => Attrs -> m a -> m a
 summary = Dom.elAttr "summary"
-
